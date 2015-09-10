@@ -112,6 +112,7 @@ namespace glf
 	void 		Info(						const std::string& _m);
 	void 		Warning(					const std::string& _m);
 	void 		Error(						const std::string& _m);
+	void		Assert(						bool _condition, const char* _expression, int _line);
 	//--------------------------------------------------------------------------
 	int 		Version(					int Major, 
 											int Minor);
@@ -145,6 +146,8 @@ namespace glf
 	std::size_t	GetFileSize(				std::ifstream& _file);
 	bool		GetExtension(				const std::string& _filename, 
 											std::string& _extension);
+
+	#define GLF_ASSERT(condition)			Assert((condition), #condition, __LINE__)
 }
 
 #endif

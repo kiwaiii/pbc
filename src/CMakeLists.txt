@@ -20,7 +20,7 @@ ENDMACRO(addExternalPackage)
 #-------------------------------------------------------------------------------
 # Project configuration
 #-------------------------------------------------------------------------------
-PROJECT(BokehRendering)
+PROJECT(PhysicallyBasedCamera)
 
 #-------------------------------------------------------------------------------
 # Definitions
@@ -84,5 +84,5 @@ ENDIF(ENABLE_OPEN_EXR)
 #-------------------------------------------------------------------------------
 # Libraries definitions
 #-------------------------------------------------------------------------------
-ADD_EXECUTABLE(BOKEH mainbokeh.cpp ${GLF_SRCS} ${GLUI_SRCS})
-TARGET_LINK_LIBRARIES(BOKEH ${OPENGL_LIBRARY} ${GLEW_LIBRARY} ${GLFW_LIBRARY} ${DevIL_LIBRARY} ${EXR_LIBS})
+ADD_EXECUTABLE(PBC main.cpp ${GLF_SRCS} ${GLUI_SRCS})
+TARGET_LINK_LIBRARIES(PBC ${OPENGL_LIBRARY} ${GLEW_LIBRARY} ${GLFW_LIBRARY} ${DevIL_LIBRARY} ${EXR_LIBS})

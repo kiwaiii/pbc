@@ -179,6 +179,12 @@ namespace glf
 		#endif
 	}
 	//--------------------------------------------------------------------------
+	void Assert(bool condition, const char* expression, int line)
+	{
+		if (!condition)
+			Error("Line:%d - Expression \"%s\" failed.", line, expression);
+	}
+	//--------------------------------------------------------------------------
 	int Version(int Major, int Minor)
 	{
 		return Major * 100 + Minor * 10;

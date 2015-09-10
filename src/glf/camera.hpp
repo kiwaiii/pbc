@@ -15,6 +15,12 @@ namespace glf
 		enum State  { PRESS, RELEASE };
 	};
 
+	struct Keyboard
+	{
+		enum Key	{ W, A, S, D, UP, DOWN, LEFT, RIGHT, UNKNOWN };
+		enum State  { PRESS, RELEASE };
+	};
+
 	class Camera
 	{
 		public:
@@ -22,7 +28,9 @@ namespace glf
 								Camera(		);
 			virtual 		   ~Camera(		);
 			virtual void		MouseEvent(	int _x, int _y, Mouse::Button _b, Mouse::State _s)=0;
-			virtual void		MoveEvent(	int _x, int _y)=0;
+			virtual void		KeyboardEvent(Keyboard::Key _k) {}
+			virtual void		KeyboardEvent(float deltaTime, Keyboard::State(*evaluator)(Keyboard::Key)) {}
+			virtual void		MoveEvent(	float _x, float _y)=0;
 			void 				Orthogonal(	float _halfSize, 
 											float _near, 
 											float _far);
@@ -41,8 +49,9 @@ namespace glf
 			virtual glm::vec3	Up(			) const=0;
 			inline float 		Near() const  { return nearPlane; };
 			inline float 		Far()  const  { return farPlane; };
-			inline float 		Fov()  const  { return fov; };
+			inline float 		VFov()  const { return vFov; }; 
 			inline float 		Ratio() const { return ratio; };
+			inline glm::ivec2	Resolution() const { return resolution; };
 
 		private:
 			//-----------------------------------------------------------------
@@ -50,39 +59,71 @@ namespace glf
 			//-----------------------------------------------------------------
 			mutable glm::mat4 	viewMatrix, 		// World to view space matrix
 								projectionMatrix;	// View to normalized projection space matrix
-			float 				nearPlane,farPlane,fov,ratio;
+			glm::ivec2			resolution;
+			float 				nearPlane,farPlane,vFov,ratio;
 	};
 
 
-	class HybridCamera : public Camera
+	class FlyingCamera : public Camera
 	{
 		public:
-								HybridCamera(float _speed=0.2f);
-			virtual 		   ~HybridCamera();
+								FlyingCamera(float _speed=0.2f);
+			virtual 		   ~FlyingCamera();
 			virtual glm::vec3   Eye(		) const;
 			virtual glm::vec3   Center(		) const;
 			virtual glm::vec3   Up(			) const;
 			void 				Speed(		float _speed);
 			virtual void		MouseEvent(	int _x, int _y, Mouse::Button _b, Mouse::State _s);
-			virtual void		MoveEvent(	int _x, int _y);
-			float 	Theta, 			// Theta angle (angle between y-axis and camera direction
-					Phi, 			// Phi angle (angle between x-axis and xz-projected camera direction)
-					Distance;		// Distance between camera target and camera center
+			virtual void		MoveEvent(	float _x, float _y);
+			virtual void		KeyboardEvent(Keyboard::Key _k) override;
+			virtual void		KeyboardEvent(float deltaTime, Keyboard::State (*evaluator)(Keyboard::Key)) override;
 
 		private:
 			//------------------------------------------------------------------
 			// Attributes
 			//------------------------------------------------------------------
 			enum Action { NONE = 0, 
-						  MOVE = 1,
-						  ZOOM = 2,
-						  PANE = 4 };
+						  MOVE = 1};
 			//------------------------------------------------------------------
-			glm::ivec2 lastPos;	// Last mouse position
+			glm::ivec2	lastPos;	// Last mouse position
 			int 		action;		// Zoom mode
 			glm::vec3 	center;		// Center of referential
-			glm::vec3 	phiAxis;	// Phi axis
+			glm::vec3 	direction;
+			glm::vec3 	up;
 			float 		speed;		// Velocity
+	};
+
+	class OrbitCamera : public Camera
+	{
+	public:
+		OrbitCamera(float _speed = 0.2f);
+		virtual 		   ~OrbitCamera();
+		virtual glm::vec3   Eye() const;
+		virtual glm::vec3   Center() const;
+		virtual glm::vec3   Up() const;
+		void 				Speed(float _speed);
+		virtual void		MouseEvent(int _x, int _y, Mouse::Button _b, Mouse::State _s);
+		virtual void		MoveEvent(float _x, float _y);
+		float 	Theta, 			// Theta angle (angle between y-axis and camera direction
+				Phi, 			// Phi angle (angle between x-axis and xz-projected camera direction)
+				Distance;		// Distance between camera target and camera center
+
+	private:
+		//------------------------------------------------------------------
+		// Attributes
+		//------------------------------------------------------------------
+		enum Action {
+			NONE = 0,
+			MOVE = 1,
+			ZOOM = 2,
+			PANE = 4
+		};
+		//------------------------------------------------------------------
+		glm::ivec2	lastPos;	// Last mouse position
+		int 		action;		// Zoom mode
+		glm::vec3 	center;		// Center of referential
+		glm::vec3 	phiAxis;	// Phi axis
+		float 		speed;		// Velocity
 	};
 }
 

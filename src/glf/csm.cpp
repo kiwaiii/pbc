@@ -244,7 +244,7 @@ namespace glf
 		glm::vec3 camDir	=  glm::normalize(_camera.Center()-camPos);
 		glm::vec3 camUp		= _camera.Up();
 		glm::vec3 camRight	=  glm::normalize(glm::cross(camDir,camUp));
-		float camFov		= _camera.Fov();
+		float camFov		= _camera.VFov();
 		float camRatio		= _camera.Ratio();
 
 		#if ENABLE_CSM_HELPERS

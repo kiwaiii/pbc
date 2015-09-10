@@ -19,14 +19,14 @@ namespace glf
 	//--------------------------------------------------------------------------
 	static void error(int error, const char* description)
 	{
-		fputs(description, stderr);
+		Error(description);
 	}
 	//--------------------------------------------------------------------------
 	static void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		if (key >= 0 && key < 255)
 			ctx::ui->Keyboard((unsigned char)key);
-
+		
 		if (action == GLFW_PRESS)
 		{
 			switch(key)
@@ -40,7 +40,7 @@ namespace glf
 			case GLFW_KEY_T:
 				ctx::drawTimings = !ctx::drawTimings;
 				break;
-			case GLFW_KEY_W:
+			case GLFW_KEY_F:
 				ctx::drawWire = !ctx::drawWire;
 				break;
 			case 27:
@@ -158,12 +158,18 @@ namespace glf
 		ctx::window.RotationCurrent = ctx::window.MouseButtonFlags & glf::MOUSE_BUTTON_RIGHT ? ctx::window.RotationOrigin + (ctx::window.MouseCurrent - ctx::window.MouseOrigin) : ctx::window.RotationOrigin;
 
 		if(!ctx::ui->IsOnFocus())
-			ctx::camera->MoveEvent(x,y);
+			ctx::camera->MoveEvent((float)xpos,(float)ypos);
 	}
 	//--------------------------------------------------------------------------
-	static void wheel( int b, int dir, int x, int y)
+	static void wheel(GLFWwindow* window, double xoffset, double yoffset)
 	{
-		if (dir > 0)
+		// Convert from sub-pixel position to integer position
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		int x = (int)xpos;
+		int y = (int)ypos;
+
+		if (yoffset > 0)
 			ctx::camera->MouseEvent(x,y, Mouse::SCROLL_UP, Mouse::PRESS);
 		else
 			ctx::camera->MouseEvent(x,y, Mouse::SCROLL_DOWN, Mouse::PRESS);
@@ -194,6 +200,30 @@ namespace glf
 		glGetIntegerv(GL_MAX_FRAGMENT_ATOMIC_COUNTER_BUFFERS,&value);		Info("GL_MAX_FRAGMENT_ATOMIC_COUNTER_BUFFERS        : %d",value);
 		glGetIntegerv(GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS,&value);		Info("GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS         : %d",value);
 	}
+	//--------------------------------------------------------------------------
+	struct KeyboardAdapter
+	{
+		static GLFWwindow* window;
+		static Keyboard::State evaluator(Keyboard::Key key)
+		{
+			int glfwKey = 0;
+			switch (key)
+			{
+			case Keyboard::UP: 		glfwKey = GLFW_KEY_UP; break;
+			case Keyboard::DOWN: 	glfwKey = GLFW_KEY_DOWN; break;
+			case Keyboard::RIGHT: 	glfwKey = GLFW_KEY_RIGHT; break;
+			case Keyboard::LEFT: 	glfwKey = GLFW_KEY_LEFT; break;
+			case Keyboard::W: 		glfwKey = GLFW_KEY_W; break;
+			case Keyboard::S: 		glfwKey = GLFW_KEY_S; break;
+			case Keyboard::A: 		glfwKey = GLFW_KEY_A; break;
+			case Keyboard::D: 		glfwKey = GLFW_KEY_D; break;
+			default:				Error("Unknown/managed key.");
+			}
+
+			return glfwGetKey(window, glfwKey) == GLFW_PRESS ? Keyboard::PRESS : Keyboard::RELEASE;
+		}
+	};
+	GLFWwindow* KeyboardAdapter::window = nullptr;
 	//--------------------------------------------------------------------------
 	bool Run(	int argc, 
 				char* argv[], 
@@ -243,13 +273,17 @@ namespace glf
 		glfwSetWindowSizeCallback(window, reshape);
 		glfwSetCursorPosCallback(window, motion);
 		glfwSetMouseButtonCallback(window, mouse);
+		glfwSetScrollCallback(window, wheel);
 
 		glGetError();
 		glf::init();
 		ctx::ui = new glui::GlfwContext();
 		ctx::ui->Initialize(size.x, size.y);
 
+		KeyboardAdapter::window = window;
+
 		// Render loop
+		double previousInSecond = glfwGetTime();
 		bool validRun = false;
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
@@ -258,11 +292,19 @@ namespace glf
 			validRun = true;
 			while (!glfwWindowShouldClose(window))
 			{
+				double currentInSecond = glfwGetTime();
+				double dt = currentInSecond - previousInSecond;
+
+				// Camera keyboard input are handled by pooling event rather than callback in order to have smoother response
+				ctx::camera->KeyboardEvent((float)dt, KeyboardAdapter::evaluator);
+
 				display();
 				glfwSwapBuffers(window);
 				glGetError(); // 'glutSwapBuffers' generates an here with OpenGL 3 > core profile ... :/
 
 				glfwPollEvents();
+
+				previousInSecond = currentInSecond;
 			}
 			end();
 		}
@@ -271,54 +313,6 @@ namespace glf
 
 		delete ctx::ui;
 		return validRun;
-
-//		glutInitWindowSize(Size.x, Size.y);
-//		glutInitWindowPosition(64, 64);
-//		glutInit(&argc, argv);
-//		glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);// | GLUT_MULTISAMPLE);
-
-//		int WindowHandle = glutCreateWindow(argv[0]);
-//		glewExperimental = GL_TRUE; 
-//		glewInit();
-//		glutDestroyWindow(WindowHandle);
-
-//		glutInitContextVersion(Major, Minor);
-//		if(glf::Version(Major, Minor) >= 410)
-		{
-//			glutInitContextProfile(GLUT_CORE_PROFILE);
-			//glutInitContextProfile(GLUT_CORE_PROFILE | GLUT_DEBUG);
-			//glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE | GLUT_DEBUG);
-			//glutInitContextFlags(GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
-		}
-
-//		glutCreateWindow(argv[0]);
-//		glGetError();
-//		glf::init();
-//		ctx::ui = new glui::GlutContext();
-//		ctx::ui->Initialize(size.x, size.y);
-/*
-		// 
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		if(begin())
-		{
-			glutDisplayFunc(	display); 
-			glutReshapeFunc(	glf::reshape);
-			glutMouseFunc(		glf::mouse);
-			glutMotionFunc(		glf::motion);
-			glutPassiveMotionFunc( glf::passivemotion);
-			glutKeyboardFunc(	glf::keyboard);
-			glutIdleFunc(		glf::idle);
-			glutCloseFunc(		glf::close);
-			glutMouseWheelFunc( glf::wheel );
-			glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
-			glutMainLoop();
-
-			return true;
-		}
-
-		delete ctx::ui;
-		return false;*/
 	}
 
 }//namespace glf

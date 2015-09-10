@@ -43,7 +43,7 @@
 namespace ctx
 {
 	glf::Camera::Ptr						camera;
-	glf::Window 							window(glm::ivec2(1280, 720));
+	glf::Window 							window(glm::ivec2(1024, 512));
 	glui::UIContext* 						ui;
 	bool									drawHelpers = false;
 	bool									drawTimings = false;
@@ -307,7 +307,7 @@ bool begin()
 	terrainParams.tessFactor 	= loader.GetFloat(ssaoNode,"tessFactor",16.f);
 	terrainParams.projFactor 	= loader.GetFloat(ssaoNode,"projFactor",10.f);
 
-	ctx::camera 				= glf::Camera::Ptr(new glf::HybridCamera());
+	ctx::camera 				= glf::Camera::Ptr(new glf::FlyingCamera());//glf::Camera::Ptr(new glf::OrbitCamera());
 	glf::manager::timings		= glf::TimingManager::Create();
 	glf::manager::helpers		= glf::HelperManager::Create();
 	app 						= new Application(	ctx::window.Size.x,
